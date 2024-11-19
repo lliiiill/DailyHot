@@ -5,6 +5,32 @@
     <n-card class="set-item">
       <div class="top">
         <div class="name">
+          <n-text class="text">明暗模式</n-text>
+        </div>
+        <n-select
+          class="set"
+          v-model:value="siteTheme"
+          :options="themeOptions"
+          @update:value="siteThemeAuto = false"
+        />
+      </div>
+    </n-card>
+    <n-card class="set-item">
+      <div class="top">
+        <div class="name">
+          <n-text class="text">明暗模式跟随系统</n-text>
+          <n-text class="tip" :depth="3"> 明暗模式是否跟随系统当前模式 </n-text>
+        </div>
+        <n-switch
+          v-model:value="siteThemeAuto"
+          :round="false"
+          @update:value="themeAutoOpen"
+        />
+      </div>
+    </n-card>
+    <n-card class="set-item">
+      <div class="top">
+        <div class="name">
           <n-text class="text">链接跳转方式</n-text>
           <n-text class="tip" :depth="3"> 选择榜单列表内容的跳转方式 </n-text>
         </div>
@@ -22,6 +48,37 @@
           <n-text class="tip" :depth="3"> 导航栏是否固定 </n-text>
         </div>
         <n-switch v-model:value="headerFixed" :round="false" />
+      </div>
+    </n-card>
+    <n-card class="set-item">
+      <div class="top" style="flex-direction: column; align-items: flex-start">
+        <div class="name">
+          <n-text class="text">列表文本大小</n-text>
+          <n-card
+            class="tip"
+            :style="{
+              backgroundColor: 'var(--n-border-color)',
+              margin: '12px 0',
+            }"
+          >
+            <n-text :style="{ fontSize: listFontSize + 'px' }">
+              我是将要显示的文字的大小
+            </n-text>
+          </n-card>
+        </div>
+
+        <n-slider
+          v-model:value="listFontSize"
+          :tooltip="false"
+          :max="20"
+          :min="14"
+          :step="0.01"
+          :marks="{
+            14: '小一点',
+            16: '默认',
+            20: '最大',
+          }"
+        />
       </div>
     </n-card>
     <n-card class="set-item">
@@ -53,11 +110,7 @@
             :content-style="{ display: 'flex', alignItems: 'center' }"
           >
             <div class="desc" :style="{ opacity: element.show ? null : 0.6 }">
-              <img
-                class="logo"
-                :src="`/logo/${element.value}.png`"
-                alt="logo"
-              />
+              <img class="logo" :src="`/logo/${element.name}.png`" alt="logo" />
               <n-text class="news-name" v-html="element.label" />
             </div>
             <n-switch
@@ -93,10 +146,31 @@
 <script setup>
 import { storeToRefs } from "pinia";
 import { mainStore } from "@/store";
+import { useOsTheme } from "naive-ui";
 import draggable from "vuedraggable";
 
 const store = mainStore();
-const { newsArr, linkOpenType, headerFixed } = storeToRefs(store);
+const osThemeRef = useOsTheme();
+const {
+  siteTheme,
+  siteThemeAuto,
+  newsArr,
+  linkOpenType,
+  headerFixed,
+  listFontSize,
+} = storeToRefs(store);
+
+// 深浅模式
+const themeOptions = ref([
+  {
+    label: "浅色模式",
+    value: "light",
+  },
+  {
+    label: "深色模式",
+    value: "dark",
+  },
+]);
 
 // 榜单跳转
 const linkOptions = [
@@ -109,6 +183,14 @@ const linkOptions = [
     value: "href",
   },
 ];
+
+// 开启明暗自动跟随
+const themeAutoOpen = (val) => {
+  console.log(osThemeRef.value);
+  if (val) {
+    siteTheme.value = osThemeRef.value;
+  }
+};
 
 // 恢复默认排序
 const restoreDefault = () => {
@@ -125,7 +207,7 @@ const saveSoreData = (name = null, open = false) => {
 
 // 重置数据
 const reset = () => {
-  if ($timeInterval) clearInterval($timeInterval);
+  if (typeof $timeInterval !== "undefined") clearInterval($timeInterval);
   localStorage.clear();
   location.reload();
 };
@@ -139,27 +221,34 @@ const reset = () => {
     font-size: 40px;
     font-weight: bold;
   }
+
   .n-h {
     padding-left: 16px;
     font-size: 20px;
     margin-left: 4px;
   }
+
   .set-item {
     width: 100%;
     border-radius: 8px;
     margin-bottom: 12px;
+
     .top {
       display: flex;
       align-items: center;
       justify-content: space-between;
+
       .name {
         font-size: 18px;
         display: flex;
         flex-direction: column;
+
         .tip {
           font-size: 12px;
+          border-radius: 8px;
         }
       }
+
       .set {
         max-width: 200px;
       }
@@ -170,25 +259,32 @@ const reset = () => {
       display: grid;
       grid-template-columns: repeat(5, minmax(0px, 1fr));
       gap: 24px;
+
       @media (max-width: 1666px) {
         grid-template-columns: repeat(4, minmax(0px, 1fr));
       }
+
       @media (max-width: 1200px) {
         grid-template-columns: repeat(3, minmax(0px, 1fr));
       }
+
       @media (max-width: 890px) {
         grid-template-columns: repeat(2, minmax(0px, 1fr));
       }
+
       @media (max-width: 620px) {
         grid-template-columns: repeat(1, minmax(0px, 1fr));
       }
+
       .item {
         cursor: pointer;
+
         .desc {
           display: flex;
           align-items: center;
           width: 100%;
           transition: all 0.3s;
+
           .logo {
             width: 40px;
             height: 40px;
@@ -199,6 +295,7 @@ const reset = () => {
             font-size: 16px;
           }
         }
+
         .switch {
           margin-left: auto;
         }
